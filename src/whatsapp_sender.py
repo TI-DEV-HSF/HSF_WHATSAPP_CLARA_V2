@@ -9,12 +9,10 @@ from urllib.parse import quote
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 
 PAINEL_CONVERSAS = (By.ID, "pane-side")
 CAIXA_MENSAGEM = (By.XPATH, "//footer//div[@contenteditable='true']")
@@ -32,8 +30,8 @@ class WhatsAppSender:
         options.add_argument(f"user-data-dir={self.config.WHATSAPP_PROFILE}")
         options.add_argument("--start-maximized")
 
-        service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=options)
+        # Selenium Manager (embutido no Selenium) baixa o chromedriver da versão do Chrome
+        self.driver = webdriver.Chrome(options=options)
         self.driver.get("https://web.whatsapp.com/")
         print("⏳ Se aparecer o QR Code, escaneie pelo celular (até 2 minutos)...")
 

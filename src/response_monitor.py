@@ -8,8 +8,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
 from datetime import datetime
 import time
 
@@ -30,8 +28,7 @@ class ResponseMonitor:
         options.add_argument(f"user-data-dir={self.config.WHATSAPP_PROFILE}")
         options.add_argument("--start-maximized")
 
-        service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=options)
+        self.driver = webdriver.Chrome(options=options)
 
         self.driver.get("https://web.whatsapp.com/")
 
