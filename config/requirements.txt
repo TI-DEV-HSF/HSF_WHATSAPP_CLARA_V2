@@ -1,0 +1,10 @@
+oracledb
+pandas
+selenium
+webdriver-manager
+pyautogui
+keyboard
+pyperclip
+openpyxl
+pytest
+pytest-mock

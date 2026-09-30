@@ -1,0 +1,180 @@
+# ==========================================
+# CLARA V2 - Git Ignore
+# ==========================================
+
+# --- VARIÁVEIS DE AMBIENTE ---
+.env
+.env.local
+.env.*.local
+.env.production
+
+# --- CREDENCIAIS E SEGURANÇA ---
+config/google-credentials.json
+config/credentials.json
+*.key
+*.pem
+*.p12
+secrets/
+
+# --- LOGS ---
+logs/
+log.txt
+*.log
+*.log.*
+
+# --- DADOS SENSÍVEIS ---
+# Não commitar dados de pacientes
+*.xlsx
+*.xls
+data/pacientes/
+# Sessao do WhatsApp
+profile/
+
+# Oracle Instant Client (copiar de outro projeto HSF, ver INSTALAR_ORACLE_CLIENT.md)
+instantclient_23_6/
+
+# --- PYTHON ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- AMBIENTES VIRTUAIS ---
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+.env
+
+# --- TESTES E COBERTURA ---
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+.hypothesis/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.sublime-project
+.sublime-workspace
+*.iml
+.project
+.pydevproject
+.settings/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# --- CACHE ---
+*.cache
+.cache/
+*.pickle
+
+# --- DATABASE ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- COMPILADOS ---
+*.o
+*.a
+*.so
+
+# --- DEPENDÊNCIAS LOCAIS ---
+vendor/
+node_modules/
+
+# --- BUILD ---
+build/
+dist/
+*.egg-info/
+
+# --- TEMP ---
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.swp
+*~
+
+# --- CONFIGURAÇÃO LOCAL ---
+local_config.json
+settings.local.json
+
+# --- N8N WORKFLOWS EXPORTADOS (se salvar localmente) ---
+# Comentado pois vamos versionar em n8n_workflows/
+# n8n_export_*.json
+
+# --- RELATÓRIOS GERADOS ---
+reports/*.html
+reports/*.pdf
+*.report
+
+# --- SCREENSHOTS/IMAGENS DE DEBUG ---
+debug/
+screenshots/
+*.png
+*.jpg
+
+# --- YARN/NPM (se adicionar Node later) ---
+node_modules/
+.yarn/
+package-lock.json
+yarn.lock
+
+# --- DOCKER ---
+.dockerignore
+
+# --- CI/CD ---
+.github/workflows/local/
+.gitlab-ci.local.yml
+.github/workflows/.local/
+
+# --- Específico do Hospital ---
+# Nunca commitar dados reais de pacientes
+dados_producao/
+backup_producao/
+auditoria_logs/
+
+# --- NÃO IGNORE (manter estes) ---
+!.gitkeep
+!config/.env.example
+!tests/fixtures/
+!docs/
+!sql/
+!n8n_workflows/
