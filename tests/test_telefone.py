@@ -21,6 +21,7 @@ class TestNormalizarCelular(unittest.TestCase):
             "21988887777 21977776666": "5521988887777",
             "(21)22223333 / 21988887777": "5521988887777",
             "M: (21)88887777 ": "5521988887777",
+            "552188887777": "5521988887777",
         }
         for bruto, esperado in casos.items():
             with self.subTest(bruto=bruto):

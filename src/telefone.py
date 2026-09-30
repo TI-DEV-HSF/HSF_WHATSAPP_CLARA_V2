@@ -11,7 +11,7 @@ _SEPARADORES = re.compile(r"\b[MRC]:|/|\bou\b", re.IGNORECASE)
 
 
 def _celular_de_digitos(d):
-    if len(d) == 13 and d.startswith("55"):
+    if len(d) in (12, 13) and d.startswith("55"):
         d = d[2:]
     if len(d) == 12 and d.startswith("0"):
         d = d[1:]

@@ -1,19 +1,22 @@
 """
-CLARA v2 - envio de lembretes de consulta via WhatsApp Web.
+CLARA v2 - envio de lembretes de consulta via WhatsApp (Evolution API).
 
   python src\\main.py             envia (respeitando MODO_TESTE do .env)
   python src\\main.py --simular   só consulta o TASY e mostra o que seria enviado
+
+As respostas dos pacientes são tratadas por src\\webhook_server.py.
 """
 
+import random
 import sys
 import time
 
 from config import config
 from database import Database
+from evolution_client import EvolutionClient, EvolutionError
 from mensagem import montar_mensagem
 from tasy_connector import TasyConnector
 from telefone import normalizar_celular
-from whatsapp_sender import WhatsAppSender
 
 HORIZONTE_HORAS = 48
 
@@ -58,21 +61,28 @@ def main(simular=False):
         print("⚠️ Nada a enviar")
         return True
 
-    whatsapp = WhatsAppSender(config)
-    try:
-        if not whatsapp.iniciar_browser():
-            return False
-        enviados = 0
-        for agenda, destino in fila:
-            resultado = whatsapp.enviar_mensagem(destino, montar_mensagem(agenda, teste=config.MODO_TESTE))
-            if resultado["ok"]:
-                enviados += 1
-                if not config.MODO_TESTE:
-                    db.inserir(agenda)
-            time.sleep(3)
-        print(f"\n✅ {enviados}/{len(fila)} mensagens enviadas")
-    finally:
-        whatsapp.fechar()
+    evo = EvolutionClient(config)
+    estado = evo.estado()
+    if estado != "open":
+        print(f"❌ WhatsApp não conectado na Evolution (estado: {estado}). Rode src\\evolution_setup.py")
+        return False
+
+    modo = "TESTE" if config.MODO_TESTE else "PRODUCAO"
+    enviados = 0
+    for i, (agenda, destino) in enumerate(fila):
+        if i:
+            # Intervalo variável entre envios reduz o risco de bloqueio do número
+            time.sleep(random.uniform(config.INTERVALO_MIN_S, config.INTERVALO_MAX_S))
+        try:
+            message_id = evo.enviar_texto(destino, montar_mensagem(agenda, teste=config.MODO_TESTE))
+        except EvolutionError as e:
+            print(f"❌ Agenda {agenda['nr_seq_agenda']}: {e}")
+            continue
+        db.registrar_envio(agenda, destino, modo, message_id)
+        enviados += 1
+        print(f"✅ [{i + 1}/{len(fila)}] agenda {agenda['nr_seq_agenda']} -> {destino}")
+
+    print(f"\n📤 {enviados}/{len(fila)} mensagens enviadas")
     return True
 
 
