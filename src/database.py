@@ -46,16 +46,25 @@ class Database:
                 dados.get('nr_seq_agenda'),
                 dados.get('nm_paciente'),
                 dados.get('dt_agenda'),
-                dados.get('telefone'),
+                dados.get('celular'),
                 dados.get('ds_especialidade'),
                 dados.get('nm_medico_resp'),
-                'PENDENTE',
+                'ENVIADO',
                 datetime.now().isoformat()
             ))
             conn.commit()
             print(f"✅ Inserido: {dados.get('nm_paciente')}")
         except sqlite3.IntegrityError:
             print(f"⚠️ Agendamento já existe: {dados.get('nr_seq_agenda')}")
+        finally:
+            conn.close()
+
+    def ja_enviado(self, nr_seq_agenda):
+        conn = sqlite3.connect(self.db_path)
+        try:
+            return conn.execute(
+                "SELECT 1 FROM agendamentos WHERE nr_seq_agenda = ?", (nr_seq_agenda,)
+            ).fetchone() is not None
         finally:
             conn.close()
 

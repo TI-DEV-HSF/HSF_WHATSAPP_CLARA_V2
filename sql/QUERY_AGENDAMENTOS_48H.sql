@@ -46,7 +46,8 @@ select
             obter_nome_medico(a.CD_MEDICO_REQ,'PS'), 
             obter_nome_medico(b.CD_PESSOA_FISICA,'PS')
         )
-    )                                               NM_MEDICO_RESP
+    )                                               NM_MEDICO_RESP,
+    A.NR_TELEFONE                                   TELEFONE_BRUTO
 from 	Agenda_Consulta_v a
 left join Agenda b on (a.cd_agenda = b.cd_agenda)
 left join Convenio E on (E.CD_CONVENIO = A.CD_CONVENIO)

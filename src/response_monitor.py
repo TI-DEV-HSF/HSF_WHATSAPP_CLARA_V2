@@ -128,7 +128,7 @@ class ResponseMonitor:
         for paciente in pacientes:
             print(f"🔍 Verificando {paciente.get('nm_paciente')}...")
 
-            resposta = self.verificar_resposta(paciente.get('telefone'))
+            resposta = self.verificar_resposta(paciente.get('celular'))
             resposta['nm_paciente'] = paciente.get('nm_paciente')
             resposta['nr_seq_agenda'] = paciente.get('nr_seq_agenda')
 

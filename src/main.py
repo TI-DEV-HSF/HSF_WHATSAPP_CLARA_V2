@@ -1,101 +1,80 @@
-#!/usr/bin/env python3
 """
-CLARA v2 - Sistema de Notificações via WhatsApp
-Entry point para execução da orquestração
+CLARA v2 - envio de lembretes de consulta via WhatsApp Web.
+
+  python src\\main.py             envia (respeitando MODO_TESTE do .env)
+  python src\\main.py --simular   só consulta o TASY e mostra o que seria enviado
 """
 
 import sys
-from pathlib import Path
+import time
+
 from config import config
 from database import Database
+from mensagem import montar_mensagem
 from tasy_connector import TasyConnector
+from telefone import normalizar_celular
 from whatsapp_sender import WhatsAppSender
-from response_monitor import ResponseMonitor
 
-print("="*60)
-print("CLARA v2 - Sistema de Notificações")
-print("="*60)
+HORIZONTE_HORAS = 48
 
-def main():
+
+def montar_fila(agendamentos, db):
+    validos = [a for a in agendamentos if a["celular"]]
+    print(f"📋 Agendamentos: {len(agendamentos)} | celular válido: {len(validos)} "
+          f"| sem celular: {len(agendamentos) - len(validos)}")
+
+    if config.MODO_TESTE:
+        destino = normalizar_celular(config.TELEFONE_TESTE)
+        if not destino:
+            raise SystemExit("❌ MODO_TESTE ligado mas TELEFONE_TESTE inválido no config/.env")
+        print(f"🧪 MODO TESTE: até {config.LIMITE_TESTE} mensagens, TODAS para {destino}. TASY não é alterado.")
+        return [(a, destino) for a in validos[: config.LIMITE_TESTE]]
+
+    pendentes = [a for a in validos if not db.ja_enviado(a["nr_seq_agenda"])]
+    print(f"🚨 MODO PRODUÇÃO: {len(pendentes)} pacientes reais receberão mensagem "
+          f"({len(validos) - len(pendentes)} já enviados antes)")
+    return [(a, a["celular"]) for a in pendentes]
+
+
+def main(simular=False):
+    print("=" * 60)
+    print("CLARA v2 - Lembretes de consulta")
+    print("=" * 60)
+
+    db = Database(config.DB_PATH)
+    tasy = TasyConnector(config)
+    if not tasy.conectar():
+        return False
     try:
-        # 1. Testar database
-        db = Database(config.DB_PATH)
-        print(f"✅ Database: {config.DB_PATH}")
-
-        # 2. Testar config
-        print(f"✅ TASY DSN: {config.TASY_DSN}")
-        print(f"✅ WhatsApp Profile: {config.WHATSAPP_PROFILE}")
-        print(f"✅ Logs Dir: {config.LOGS_DIR}")
-
-        # 3. Conectar ao TASY
-        print(f"\n🔗 Conectando ao TASY...")
-        tasy = TasyConnector(config)
-
-        if not tasy.conectar():
-            print("❌ Erro: Verifique credenciais em config/.env")
-            return False
-
-        # 4. Buscar agendamentos
-        agendamentos = tasy.buscar_agendamentos_proximos(48)
-
-        if not agendamentos:
-            print("⚠️ Nenhum agendamento encontrado")
-            tasy.desconectar()
-            return True
-
-        # 5. Iniciar WhatsApp Sender
-        print(f"\n📱 Iniciando WhatsApp Sender...")
-        whatsapp = WhatsAppSender(config)
-
-        if not whatsapp.iniciar_browser():
-            print("❌ Erro ao conectar WhatsApp")
-            tasy.desconectar()
-            return False
-
-        # 6. Enviar notificações
-        print(f"\n📤 Enviando {len(agendamentos)} notificações...")
-        enviados = 0
-
-        for agenda in agendamentos:
-            msg = f"Olá {agenda['nm_paciente']}, confirme sua consulta respondendo com '1' ou 'SIM'"
-            resultado = whatsapp.enviar_mensagem(agenda['telefone'], msg)
-
-            if resultado['ok']:
-                db.inserir(agenda)
-                enviados += 1
-
-            # Pequena pausa entre envios
-            import time
-            time.sleep(1)
-
-        print(f"\n✅ {enviados} mensagens enviadas!")
-
-        # 7. Monitorar respostas (opcional)
-        print(f"\n🔍 Monitorando respostas por 5 minutos...")
-        monitor = ResponseMonitor(config)
-
-        if monitor.iniciar_browser():
-            confirmados = monitor.verificar_todas_respostas(agendamentos[:3])  # Testar com 3 primeiros
-
-            # Atualizar TASY com confirmações
-            for confirm in confirmados:
-                tasy.atualizar_status_confirmado(confirm['nr_seq_agenda'])
-
-            monitor.fechar()
-
-        # 8. Limpeza
-        whatsapp.fechar()
+        agendamentos = tasy.buscar_agendamentos_proximos(HORIZONTE_HORAS)
+    finally:
         tasy.desconectar()
 
-        print("\n✅ CLARA v2 EXECUTADO COM SUCESSO!")
+    fila = montar_fila(agendamentos, db)
+    if simular:
+        print(f"🔎 SIMULAÇÃO: {len(fila)} mensagens seriam enviadas. Nada foi enviado.")
+        return True
+    if not fila:
+        print("⚠️ Nada a enviar")
         return True
 
-    except Exception as e:
-        print(f"❌ Erro crítico: {str(e)}")
-        return False
+    whatsapp = WhatsAppSender(config)
+    try:
+        if not whatsapp.iniciar_browser():
+            return False
+        enviados = 0
+        for agenda, destino in fila:
+            resultado = whatsapp.enviar_mensagem(destino, montar_mensagem(agenda, teste=config.MODO_TESTE))
+            if resultado["ok"]:
+                enviados += 1
+                if not config.MODO_TESTE:
+                    db.inserir(agenda)
+            time.sleep(3)
+        print(f"\n✅ {enviados}/{len(fila)} mensagens enviadas")
+    finally:
+        whatsapp.fechar()
+    return True
+
 
 if __name__ == "__main__":
-    if main():
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    sys.exit(0 if main(simular="--simular" in sys.argv) else 1)

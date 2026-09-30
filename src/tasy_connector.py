@@ -8,6 +8,8 @@ from pathlib import Path
 
 import oracledb
 
+from telefone import normalizar_celular
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SQL_DIR = BASE_DIR / "sql"
 QUERIES_POR_HORIZONTE = {
@@ -92,6 +94,9 @@ class TasyConnector:
                 colunas = [d[0].lower() for d in cursor.description]
                 agendamentos = [dict(zip(colunas, row)) for row in cursor.fetchall()]
 
+            for a in agendamentos:
+                a["celular"] = normalizar_celular(a.get("telefone_bruto") or a.get("telefone"))
+
             print(f"✅ {len(agendamentos)} agendamentos encontrados ({arquivo})")
             return agendamentos
         except oracledb.DatabaseError as e:
@@ -100,6 +105,9 @@ class TasyConnector:
 
     def atualizar_status_confirmado(self, nr_seq_agenda):
         """Confirma a agenda no TASY (mesmo UPDATE do CLARA v1 em produção)."""
+        if self.config.MODO_TESTE:
+            print(f"🧪 MODO TESTE: TASY NÃO alterado (confirmaria agenda {nr_seq_agenda})")
+            return False
         if not self.conectado:
             return False
 
@@ -143,8 +151,8 @@ if __name__ == "__main__":
     if tasy.conectar():
         agendamentos = tasy.buscar_agendamentos_proximos(horas)
         if agendamentos:
-            com_telefone = sum(1 for a in agendamentos if a.get("telefone"))
-            print(f"📞 Com telefone preenchido: {com_telefone}/{len(agendamentos)}")
+            com_celular = sum(1 for a in agendamentos if a["celular"])
+            print(f"📱 Celular válido p/ WhatsApp: {com_celular}/{len(agendamentos)}")
             print("\n📋 Colunas retornadas:")
             print(json.dumps(sorted(agendamentos[0].keys()), indent=2))
         tasy.desconectar()

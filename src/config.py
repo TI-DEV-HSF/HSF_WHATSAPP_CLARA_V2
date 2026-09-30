@@ -11,8 +11,15 @@ class Config:
     TASY_DSN = os.getenv("TASY_DSN", "192.168.5.9:1521/TASYPRD")
 
     # WhatsApp
-    WHATSAPP_PROFILE = os.getenv("WHATSAPP_PROFILE", "C:\\clara\\profile\\wpp")
+    WHATSAPP_PROFILE = os.getenv(
+        "WHATSAPP_PROFILE", str(Path(__file__).parent.parent / "profile" / "wpp")
+    )
     WHATSAPP_TIMEOUT = int(os.getenv("WHATSAPP_TIMEOUT", "30"))
+
+    # Modo teste: ligado a menos que o .env diga MODO_TESTE=false
+    MODO_TESTE = os.getenv("MODO_TESTE", "true").strip().lower() != "false"
+    TELEFONE_TESTE = os.getenv("TELEFONE_TESTE", "").strip()
+    LIMITE_TESTE = int(os.getenv("LIMITE_TESTE", "3"))
 
     # Paths
     BASE_DIR = Path(__file__).parent.parent
